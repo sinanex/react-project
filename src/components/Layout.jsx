@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../store/store';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Layers, 
-  Calendar, 
-  Wallet, 
-  BarChart3, 
-  Settings, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Users,
+  Layers,
+  Calendar,
+  Wallet,
+  BarChart3,
+  Settings,
+  Bell,
   Search,
   Menu,
   X,
@@ -27,7 +27,8 @@ function cn(...inputs) {
 
 const Sidebar = ({ isOpen, toggle }) => {
   const location = useLocation();
-  
+  const dispatch = useDispatch();
+
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'User Management', icon: Users, path: '/users' },
@@ -65,8 +66,8 @@ const Sidebar = ({ isOpen, toggle }) => {
                 to={item.path}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                  isActive 
-                    ? "bg-blue-600/10 text-blue-500 shadow-sm" 
+                  isActive
+                    ? "bg-blue-600/10 text-blue-500 shadow-sm"
                     : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
                 )}
               >
@@ -82,7 +83,14 @@ const Sidebar = ({ isOpen, toggle }) => {
         </nav>
 
         <div className="p-4 border-t border-border">
-          <button className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-colors">
+          <button
+            onClick={() => {
+              if (window.confirm('Do you want to logout?')) {
+                dispatch({ type: 'auth/logout' });
+              }
+            }}
+            className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-colors"
+          >
             <LogOut size={20} />
             <span className="font-medium">Logout</span>
           </button>
@@ -95,6 +103,7 @@ const Sidebar = ({ isOpen, toggle }) => {
 const Topbar = ({ toggleSidebar }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.app.ui.theme);
+  const { user } = useSelector(state => state.auth);
 
   return (
     <header className="h-20 bg-surface/50 backdrop-blur-xl border-b border-border sticky top-0 z-30 px-6 flex items-center justify-between">
@@ -104,36 +113,36 @@ const Topbar = ({ toggleSidebar }) => {
         </button>
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search anything..." 
+          <input
+            type="text"
+            placeholder="Search anything..."
             className="bg-background border border-border rounded-xl pl-10 pr-4 py-2 w-64 text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={() => dispatch(toggleTheme())}
           className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
-        
+
         <button className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
           <Bell size={20} />
           <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-surface rounded-full" />
         </button>
-        
+
         <div className="h-8 w-px bg-border mx-2" />
-        
+
         <div className="flex items-center gap-3 pl-2 cursor-pointer group">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold group-hover:text-blue-400 transition-colors">Admin User</p>
-            <p className="text-xs text-slate-500 font-medium">Super Admin</p>
+            <p className="text-sm font-semibold group-hover:text-blue-400 transition-colors capitalize">{user?.name || 'Admin User'}</p>
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-tighter">{user?.usertype || 'Super Admin'}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20">
-            A
+            {user?.name?.charAt(0) || 'A'}
           </div>
         </div>
       </div>
@@ -152,7 +161,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Sidebar isOpen={isSidebarOpen} toggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
+
       <div className={cn(
         "transition-all duration-300",
         "lg:ml-64"
