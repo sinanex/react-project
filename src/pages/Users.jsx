@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
     Search,
     Plus,
@@ -14,17 +15,29 @@ import {
     Shield,
     X,
     Loader2,
-    CheckCircle2
+    CheckCircle2,
+    AlertCircle,
+    AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs) {
+    return twMerge(clsx(inputs));
+}
 
 const Users = () => {
+    const { token } = useSelector(state => state.auth);
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+
+    // Toast state
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     // Form state
     const [formData, setFormData] = useState({
@@ -33,27 +46,35 @@ const Users = () => {
         phone: '',
         place: '',
         password: '',
-        usertype: 'user'
+        usertype: 'Boy A'
     });
 
     const API_URL = '/api/users';
 
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ ...toast, show: false }), 4000);
+    };
+
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [token]);
 
     const fetchUsers = async () => {
+        if (!token) return;
         setIsLoading(true);
         try {
-            const response = await fetch(API_URL);
+            const response = await fetch(API_URL, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (!response.ok) throw new Error('Failed to fetch users');
             const data = await response.json();
             setUsers(Array.isArray(data) ? data : []);
             setError(null);
         } catch (err) {
             setError(err.message);
-            // Fallback for testing if API is not up
-            // setUsers([{ id: 1, name: 'Sample User', email: 'sample@example.com', phone: '1234567890', place: 'Mumbai', usertype: 'admin', createdat: new Date() }]);
         } finally {
             setIsLoading(false);
         }
@@ -71,7 +92,7 @@ const Users = () => {
             phone: '',
             place: '',
             password: '',
-            usertype: 'user'
+            usertype: 'Boy A'
         });
         setEditingUser(null);
         setIsModalOpen(false);
@@ -90,16 +111,25 @@ const Users = () => {
         try {
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error('Failed to save user');
+            const data = await response.json();
 
+            if (!response.ok) {
+                // Show specific error from backend like "Email or Phone already exists"
+                throw new Error(data.error || data.message || 'Failed to save user');
+            }
+
+            showToast(editingUser ? 'User updated successfully!' : 'User created successfully!', 'success');
             await fetchUsers();
             resetForm();
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         }
     };
 
@@ -110,8 +140,8 @@ const Users = () => {
             email: user.email,
             phone: user.phone,
             place: user.place,
-            password: '', // Don't show password for security, let them update if they want
-            usertype: user.usertype || 'user'
+            password: '',
+            usertype: user.usertype || 'Boy A'
         });
         setIsModalOpen(true);
     };
@@ -121,22 +151,54 @@ const Users = () => {
 
         try {
             const response = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
-            if (!response.ok) throw new Error('Failed to delete user');
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete user');
+            }
+
+            showToast('User deleted successfully!', 'success');
             await fetchUsers();
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, 'error');
         }
     };
 
     const filteredUsers = users.filter(user =>
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.phone?.includes(searchTerm)
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {toast.show && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, x: '-50%' }}
+                        animate={{ opacity: 1, y: 20, x: '-50%' }}
+                        exit={{ opacity: 0, y: -20, x: '-50%' }}
+                        className={cn(
+                            "fixed top-4 left-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border min-w-[320px] backdrop-blur-md",
+                            toast.type === 'success'
+                                ? "bg-emerald-500/90 text-white border-emerald-400/20"
+                                : "bg-rose-500/90 text-white border-rose-400/20"
+                        )}
+                    >
+                        {toast.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                        <p className="font-bold text-sm tracking-wide">{toast.message}</p>
+                        <button onClick={() => setToast({ ...toast, show: false })} className="ml-auto opacity-70 hover:opacity-100 transition-opacity">
+                            <X size={16} />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>

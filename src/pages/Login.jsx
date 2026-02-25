@@ -6,7 +6,7 @@ import { Lock, Mail, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { loginStart, loginSuccess, loginFailure } from '../store/store';
 
 const Login = () => {
-    const [credentials, setCredentials] = useState({ email: '', password: '' });
+    const [credentials, setCredentials] = useState({ phone: '', password: '' });
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { loading, error, isAuthenticated } = useSelector(state => state.auth);
@@ -26,13 +26,21 @@ const Login = () => {
         dispatch(loginStart());
 
         try {
-            const response = await fetch('/api/login', {
+            const response = await fetch('/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials)
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get("content-type");
+            let data;
+
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+            }
 
             if (!response.ok) {
                 throw new Error(data.message || 'Login failed');
@@ -71,16 +79,16 @@ const Login = () => {
                 <div className="bg-surface border border-border rounded-3xl p-8 shadow-2xl glass-effect-heavy">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Email Address</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Phone Number</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     required
-                                    type="email"
-                                    name="email"
-                                    placeholder="admin@example.com"
+                                    type="tel"
+                                    name="phone"
+                                    placeholder="Enter phone number"
                                     className="w-full bg-background border border-border rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-                                    value={credentials.email}
+                                    value={credentials.phone}
                                     onChange={handleChange}
                                 />
                             </div>
