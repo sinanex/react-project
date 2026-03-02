@@ -7,11 +7,7 @@ const initialState = {
         { id: 3, name: 'Suresh Singh', category: 'C', wage: 500, status: 'Inactive', bookingCount: 8, performance: 3.9 },
         { id: 4, name: 'Vicky Verma', category: 'A', wage: 1300, status: 'Active', bookingCount: 30, performance: 4.9 },
     ],
-    categories: [
-        { id: 'A', name: 'Skilled Worker', defaultWage: 1200, privileges: ['All access', 'Team Lead'] },
-        { id: 'B', name: 'Server', defaultWage: 800, privileges: ['Serving area'] },
-        { id: 'C', name: 'Helper', defaultWage: 500, privileges: ['Kitchen help'] },
-    ],
+    categories: [],
     events: [
         {
             id: 1,

@@ -1,110 +1,292 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Modern Dark Blue Theme
+═══════════════════════════════════════════════════════════════════ */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  /* Global Theme Variables */
-  --color-primary: #3b82f6;
-  --color-accent: #f59e0b;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
 }
 
-/* Dark Theme (Default) */
+/* ── Dark Theme (default) ── */
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
-  --bg-main: #0f172a;
-  --bg-surface: #1e293b;
-  --bg-sidebar: #0f172a;
-  --color-text: rgba(255, 255, 255, 0.87);
-  --color-text-muted: #64748b;
-  --border-color: #334155;
-  --header-bg: rgba(15, 23, 42, 0.5);
+
+  --bg-main: #070d1a;
+  --bg-surface: #0d1629;
+  --bg-card: #111e35;
+  --bg-sidebar: #0a1220;
+  --bg-hover: rgba(59, 130, 246, 0.08);
+  --bg-active: rgba(59, 130, 246, 0.15);
+  --bg-input: #0d1629;
+
+  --text-primary: #e8eef8;
+  --text-muted: #64748b;
+  --text-disabled: #334155;
+
+  --border-color: rgba(99, 143, 255, 0.12);
+  --border-active: rgba(99, 143, 255, 0.35);
+
+  --color-primary: #3b82f6;
+  --color-primary-glow: rgba(59, 130, 246, 0.25);
+  --color-accent: #6366f1;
+
+  --sidebar-width: 260px;
+
+  --header-bg: rgba(7, 13, 26, 0.75);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Light Theme */
+/* ── Light Theme ── */
 [data-theme='light'] {
   color-scheme: light;
-  --bg-main: #f8fafc;
+
+  --bg-main: #f0f4ff;
   --bg-surface: #ffffff;
-  --bg-sidebar: #1e293b;
-  /* Keep sidebar dark for premium look even in light mode? Or make it light? Let's go with light sidebar for true light mode */
-  --bg-sidebar: #ffffff;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --border-color: #e2e8f0;
-  --header-bg: rgba(255, 255, 255, 0.8);
+  --bg-card: #f8faff;
+  --bg-sidebar: #0d1629;
+  --bg-hover: rgba(59, 130, 246, 0.06);
+  --bg-active: rgba(59, 130, 246, 0.12);
+  --bg-input: #ffffff;
+
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-active: rgba(59, 130, 246, 0.4);
+
+  --color-primary: #2563eb;
+  --color-primary-glow: rgba(37, 99, 235, 0.2);
+  --color-accent: #4f46e5;
+
+  --header-bg: rgba(240, 244, 255, 0.80);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   Tailwind v4 custom theme tokens
+═══════════════════════════════════════════════════════════════════ */
 @theme {
-  --color-primary: var(--color-primary);
-  --color-accent: var(--color-accent);
   --color-background: var(--bg-main);
   --color-surface: var(--bg-surface);
+  --color-card: var(--bg-card);
   --color-border: var(--border-color);
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Base
+═══════════════════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
   background-color: var(--bg-main);
-  color: var(--color-text);
+  color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom Scrollbar */
+/* ═══════════════════════════════════════════════════════════════════
+   Layout shell
+═══════════════════════════════════════════════════════════════════ */
+.app-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: var(--sidebar-width);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: transform 0.3s ease;
+}
+
+.app-sidebar.closed {
+  transform: translateX(-100%);
+}
+
+.app-main {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  background: var(--bg-main);
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  height: 72px;
+  background: var(--header-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 30;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Sidebar nav items
+═══════════════════════════════════════════════════════════════════ */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.18s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--bg-active);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.nav-icon {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.18s ease;
+}
+
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Utility classes used across pages
+═══════════════════════════════════════════════════════════════════ */
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* Inputs */
+input,
+textarea,
+select {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-surface);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: var(--border-color);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #475569;
 }
 
-/* Glassmorphism Utilities */
-.glass-effect {
-  background: rgba(var(--bg-surface-rgb), 0.7) !important;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* Glassmorphism */
+.glass {
+  background: rgba(13, 22, 41, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border-color);
 }
 
-.glass-effect-heavy {
-  background: rgba(var(--bg-surface-rgb), 0.9) !important;
-  backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+[data-theme='light'] .glass {
+  background: rgba(255, 255, 255, 0.7);
 }
 
-/* Define RGB variables for glass effect */
-:root,
-[data-theme='dark'] {
-  --bg-surface-rgb: 30, 41, 59;
+/* Status badges */
+.badge-active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-[data-theme='light'] {
-  --bg-surface-rgb: 255, 255, 255;
+.badge-inactive {
+  background: rgba(100, 116, 139, 0.12);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
 
-  .glass-effect,
-  .glass-effect-heavy {
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-  }
+/* Glow button */
+.btn-primary {
+  background: var(--color-primary);
+  color: #ffffff;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 15px var(--color-primary-glow);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px var(--color-primary-glow);
+}
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 0;
 }
