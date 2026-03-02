@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
     Users, Calendar, CheckCircle2, Clock, IndianRupee,
-    TrendingUp, TrendingDown, ArrowUpRight
+    TrendingUp, TrendingDown, ArrowUpRight, Loader2, MapPin
 } from 'lucide-react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import { motion } from 'framer-motion';
 
-const StatCard = ({ title, value, icon: Icon, trend, trendValue, colorClass }) => (
+const StatCard = ({ title, value, icon: Icon, trend, trendValue, loading }) => (
     <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -19,8 +19,12 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, colorClass }) =
         <div className="flex justify-between items-start z-10">
             <div>
                 <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{title}</p>
-                <h3 className="text-2xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>{value}</h3>
-                <div className="flex items-center gap-1.5">
+                {loading ? (
+                    <div className="h-8 w-20 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-lg mt-1" />
+                ) : (
+                    <h3 className="text-2xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>{value}</h3>
+                )}
+                <div className="flex items-center gap-1.5 mt-2">
                     <div className={`px-2 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1
                         ${trend === 'up' ? 'badge-active' : 'badge-inactive'}`}>
                         {trend === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -32,63 +36,129 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, colorClass }) =
                 <Icon size={24} />
             </div>
         </div>
-        {/* Subtle background glow */}
         <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/5 blur-3xl rounded-full" />
     </motion.div>
 );
 
 const Dashboard = () => {
-    const { boys, events, revenue } = useSelector(state => state.app);
+    const { token } = useSelector(state => state.auth);
+    const [isLoading, setIsLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState({
+        events: [],
+        users: [],
+        categories: [],
+        counts: { staff: 0, events: 0 }
+    });
 
-    const COLORS = ['#3b82f6', '#818cf8', '#6366f1', '#4f46e5'];
+    const COLORS = ['#3b82f6', '#818cf8', '#6366f1', '#4f46e5', '#ec4899', '#f59e0b'];
 
-    const pieData = [
-        { name: 'Boy A', value: 15 },
-        { name: 'Boy B', value: 25 },
-        { name: 'Boy C', value: 30 },
-        { name: 'Admin', value: 5 },
+    useEffect(() => {
+        if (token) {
+            fetchDashboardData();
+        }
+    }, [token]);
+
+    const fetchDashboardData = async () => {
+        setIsLoading(true);
+        try {
+            const headers = { 'Authorization': `Bearer ${token}` };
+
+            // Fetch all required data in parallel
+            const [eventsRes, usersRes, catsRes] = await Promise.all([
+                fetch('/api/events', { headers }),
+                fetch('/api/users', { headers }),
+                fetch('/api/boy-categories', { headers })
+            ]);
+
+            const eventsData = await eventsRes.json();
+            const usersData = await usersRes.json();
+            const catsData = await catsRes.json();
+
+            const events = Array.isArray(eventsData) ? eventsData : (eventsData.data || []);
+            const users = Array.isArray(usersData) ? usersData : (usersData.data || []);
+            const categories = Array.isArray(catsData) ? catsData : (catsData.data || []);
+
+            setDashboardData({
+                events,
+                users,
+                categories,
+                counts: {
+                    staff: users.length,
+                    events: events.filter(e => e.status === 'active').length
+                }
+            });
+        } catch (err) {
+            console.error('Dashboard fetch error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Process Pie Data from live users and categories
+    const getPieData = () => {
+        if (dashboardData.categories.length === 0) return [];
+
+        const distribution = dashboardData.categories.map(cat => {
+            const count = dashboardData.users.filter(u => u.role_type === cat.name || u.usertype === cat.name).length;
+            return { name: cat.name, value: count };
+        }).filter(d => d.value > 0);
+
+        // Add Admin if present
+        const adminCount = dashboardData.users.filter(u => u.usertype === 'Admin').length;
+        if (adminCount > 0) distribution.push({ name: 'Admin', value: adminCount });
+
+        const total = distribution.reduce((sum, d) => sum + d.value, 0);
+        return distribution.map(d => ({
+            ...d,
+            percent: total > 0 ? Math.round((d.value / total) * 100) : 0
+        }));
+    };
+
+    const pieData = getPieData();
+    const upcomingEvents = dashboardData.events.filter(e => e.status === 'active').slice(0, 5);
+    const recentActivity = dashboardData.users.slice(-4).reverse();
+
+    const revenueMock = [
+        { month: 'Jan', revenue: 45000 },
+        { month: 'Feb', revenue: 52000 },
+        { month: 'Mar', revenue: 48000 },
+        { month: 'Apr', revenue: 61000 },
+        { month: 'May', revenue: 55000 },
+        { month: 'Jun', revenue: 67000 },
     ];
 
     return (
         <div className="space-y-8">
-            {/* Header */}
-            <div>
-                <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                    Analytics Overview
-                </h1>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                    Insights and performance monitoring for your event workforce.
-                </p>
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight uppercase" style={{ color: 'var(--text-primary)' }}>
+                        Analytics Overview
+                    </h1>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                        Live monitoring of your mission operations.
+                    </p>
+                </div>
+                {isLoading && <Loader2 className="animate-spin text-primary mb-2" size={20} />}
             </div>
 
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Staff" value={boys.length} icon={Users} trend="up" trendValue="+12.5%" />
-                <StatCard title="Active Events" value={events.length} icon={Calendar} trend="up" trendValue="+2 new" />
-                <StatCard title="Monthly Revenue" value={`₹${revenue.totalRevenue.toLocaleString()}`} icon={IndianRupee} trend="up" trendValue="+8.2%" />
-                <StatCard title="Completion Rate" value="98.2%" icon={CheckCircle2} trend="up" trendValue="+0.4%" />
+                <StatCard title="Total Staff" value={dashboardData.counts.staff} icon={Users} trend="up" trendValue="+12.5%" loading={isLoading} />
+                <StatCard title="Active Events" value={dashboardData.counts.events} icon={Calendar} trend="up" trendValue="Syncing" loading={isLoading} />
+                <StatCard title="Total Revenue" value="₹3,28,000" icon={IndianRupee} trend="up" trendValue="+8.2%" />
+                <StatCard title="Health Score" value="98.2%" icon={CheckCircle2} trend="up" trendValue="+0.4%" />
             </div>
 
-            {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Revenue Area Chart */}
                 <div className="lg:col-span-2 card p-8">
                     <div className="flex justify-between items-center mb-10">
                         <div>
-                            <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Revenue Stream</h3>
-                            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Monthly financial performance overview</p>
+                            <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Performance Trace</h3>
+                            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Revenue and activity consistency</p>
                         </div>
-                        <select
-                            className="text-xs font-bold rounded-xl px-4 py-2 outline-none transition-all"
-                            style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
-                        >
-                            <option>Last 6 Months</option>
-                            <option>Last Year</option>
-                        </select>
                     </div>
                     <div className="h-80 w-full pr-4">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={revenue.monthly}>
+                            <AreaChart data={revenueMock}>
                                 <defs>
                                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.4} />
@@ -116,91 +186,117 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Categories Pie Chart */}
                 <div className="card p-8 flex flex-col">
                     <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--text-primary)' }}>Workforce</h3>
-                    <p className="text-xs font-medium mb-8" style={{ color: 'var(--text-muted)' }}>Distribution by staff category</p>
+                    <p className="text-xs font-medium mb-8" style={{ color: 'var(--text-muted)' }}>Skill category distribution</p>
 
-                    <div className="flex-1 flex items-center justify-center relative">
-                        <ResponsiveContainer width="100%" height={220}>
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    cx="50%" cy="50%"
-                                    innerRadius={65} outerRadius={85}
-                                    paddingAngle={8} dataKey="value"
-                                    stroke="none"
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={6} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'var(--bg-surface)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '12px'
-                                    }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        {/* Middle Text */}
-                        <div className="absolute flex flex-col items-center">
-                            <span className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>100%</span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total</span>
-                        </div>
+                    <div className="flex-1 flex items-center justify-center relative min-h-[220px]">
+                        {isLoading ? (
+                            <Loader2 size={30} className="animate-spin text-slate-300" />
+                        ) : pieData.length > 0 ? (
+                            <>
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            cx="50%" cy="50%"
+                                            innerRadius={65} outerRadius={85}
+                                            paddingAngle={8} dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {pieData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={6} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: 'var(--bg-surface)',
+                                                border: '1px solid var(--border-color)',
+                                                borderRadius: '12px'
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="absolute flex flex-col items-center">
+                                    <span className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>100%</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Total</span>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-xs text-slate-400 italic">Data unavailable</p>
+                        )}
                     </div>
 
                     <div className="mt-8 space-y-3">
                         {pieData.map((item, i) => (
-                            <div key={item.name} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors">
+                            <div key={item.name} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors text-slate-900 dark:text-white">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-2.5 h-2.5 rounded-full shadow-lg" style={{ backgroundColor: COLORS[i], boxShadow: `0 0 10px ${COLORS[i]}44` }} />
-                                    <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{item.name}</span>
+                                    <div className="w-2.5 h-2.5 rounded-full shadow-lg" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                                    <span className="text-xs font-bold uppercase tracking-tight opacity-70">{item.name}</span>
                                 </div>
-                                <span className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{item.value}%</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded opacity-60">{item.value}</span>
+                                    <span className="text-sm font-black">{item.percent}%</span>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Bottom Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="card overflow-hidden">
                     <div className="p-6 border-b border-border flex justify-between items-center bg-sidebar/30">
-                        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Upcoming Events</h3>
-                        <button className="text-xs font-bold uppercase tracking-widest hover:text-primary transition-colors" style={{ color: 'var(--color-primary)' }}>View Schedule</button>
+                        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Upcoming Ops</h3>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{upcomingEvents.length} Active</span>
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid var(--border-color)' }}>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Event Detail</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Location</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Status</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-right" style={{ color: 'var(--text-muted)' }}>Action</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Event</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Location</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Scale</th>
+                                    <th className="px-6 py-4" />
                                 </tr>
                             </thead>
-                            <tbody className="divide-y" style={{ borderColor: 'var(--divider-color)' }}>
-                                {events.map((event) => (
-                                    <tr key={event.id} className="hover:bg-slate-400/5 transition-colors group">
+                            <tbody className="divide-y borderless" style={{ borderColor: 'var(--divider-color)' }}>
+                                {upcomingEvents.length === 0 && !isLoading ? (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-10 text-center text-xs text-slate-400 italic">No scheduled events</td>
+                                    </tr>
+                                ) : upcomingEvents.map((event) => (
+                                    <tr key={event._id || event.id} className="hover:bg-slate-400/5 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div>
-                                                <p className="text-sm font-bold group-hover:text-primary transition-colors" style={{ color: 'var(--text-primary)' }}>{event.title}</p>
-                                                <p className="text-[10px] font-semibold mt-0.5" style={{ color: 'var(--text-muted)' }}>{event.date}</p>
+                                                <p className="text-sm font-black group-hover:text-primary transition-colors text-slate-900 dark:text-white uppercase tracking-tight">{event.title || event.name}</p>
+                                                <p className="text-[10px] font-bold mt-0.5 flex items-center gap-1.5 text-slate-400">
+                                                    <Calendar size={10} /> {new Date(event.date).toLocaleDateString()}
+                                                </p>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{event.location}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-tighter ${event.status === 'Upcoming' ? 'badge-active' : 'bg-indigo-500/10 text-indigo-400'}`}>
-                                                {event.status}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                                                <MapPin size={12} className="text-rose-500 opacity-60" />
+                                                {event.place}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex gap-1.5">
+                                                {(event.slots || []).slice(0, 2).map((s, i) => (
+                                                    <span key={i} className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 text-[9px] font-black border border-blue-500/20">
+                                                        {s.total}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="p-2 rounded-lg border border-border hover:border-primary transition-all" style={{ background: 'var(--bg-main)', color: 'var(--text-muted)' }}>
+                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
                                                 <ArrowUpRight size={14} />
-                                            </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -211,25 +307,31 @@ const Dashboard = () => {
 
                 <div className="card p-8">
                     <div className="flex justify-between items-center mb-8">
-                        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Recent Activity</h3>
-                        <div className="p-2 rounded-lg text-primary bg-primary/10">
+                        <div>
+                            <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Terminal Hook</h3>
+                            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Latest system registration & activity</p>
+                        </div>
+                        <div className="p-3 rounded-2xl text-primary bg-primary/10">
                             <Clock size={16} />
                         </div>
                     </div>
                     <div className="space-y-8 relative">
-                        {/* Vertical Line */}
-                        <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
+                        <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border/40" />
 
-                        {[1, 2, 3, 4].map((item) => (
-                            <div key={item} className="flex gap-5 relative z-10">
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-border shadow-sm shrink-0" style={{ background: 'var(--bg-surface)' }}>
-                                    <div className="w-2 h-2 rounded-full bg-primary" />
+                        {recentActivity.length === 0 && !isLoading ? (
+                            <p className="text-xs text-slate-400 italic py-4">Waiting for incoming logs...</p>
+                        ) : recentActivity.map((user, idx) => (
+                            <div key={user._id || user.id} className="flex gap-5 relative z-10 transition-all hover:translate-x-1">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-border shadow-md shrink-0 bg-surface">
+                                    <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-emerald-500 animate-pulse' : 'bg-primary'}`} />
                                 </div>
-                                <div className="pt-2">
-                                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                                        <span className="font-black">Rahul Sharma</span> confirmed attendance for <span className="font-black text-primary">Wedding Function</span>
+                                <div className="pt-1.5">
+                                    <p className="text-sm font-bold leading-tight text-slate-900 dark:text-white">
+                                        <span className="text-blue-500 font-black">{user.name}</span> registered as <span className="opacity-50 text-[10px] uppercase font-black">{user.role_type || user.usertype}</span>
                                     </p>
-                                    <p className="text-[10px] font-bold uppercase tracking-widest mt-1.5" style={{ color: 'var(--text-muted)' }}>2 hours ago</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest mt-1 text-slate-400">
+                                        Origin: {user.place || 'Field HQ'}
+                                    </p>
                                 </div>
                             </div>
                         ))}
