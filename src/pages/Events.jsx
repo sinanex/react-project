@@ -33,6 +33,7 @@ const Events = () => {
     const [editingEventId, setEditingEventId] = useState(null);
     const [viewingEvent, setViewingEvent] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [categories, setCategories] = useState([]);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     // Form state
@@ -44,11 +45,7 @@ const Events = () => {
         location: '',
         description: '',
         status: 'active',
-        slots: [
-            { name: 'Boy A', total: 0 },
-            { name: 'Boy B', total: 0 },
-            { name: 'Boy C', total: 0 }
-        ]
+        slots: []
     });
 
     const API_URL = '/api/events';
@@ -60,7 +57,36 @@ const Events = () => {
 
     useEffect(() => {
         fetchEvents();
+        fetchCategories();
     }, [token]);
+
+    const fetchCategories = async () => {
+        const activeToken = token || localStorage.getItem('token');
+        if (!activeToken) return;
+        try {
+            const response = await fetch('/api/boy-categories', {
+                headers: { 'Authorization': `Bearer ${activeToken}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const fetchedCategories = Array.isArray(data) ? data : [];
+                setCategories(fetchedCategories);
+
+                // Initialize form slots if they are empty
+                setFormData(prev => {
+                    if (prev.slots.length === 0) {
+                        return {
+                            ...prev,
+                            slots: fetchedCategories.map(cat => ({ name: cat.name, total: 0 }))
+                        };
+                    }
+                    return prev;
+                });
+            }
+        } catch (err) {
+            console.error('Failed to fetch categories:', err);
+        }
+    };
 
     const fetchEvents = async () => {
         if (!token) return;
@@ -106,11 +132,7 @@ const Events = () => {
             location: '',
             description: '',
             status: 'active',
-            slots: [
-                { name: 'Boy A', total: 0 },
-                { name: 'Boy B', total: 0 },
-                { name: 'Boy C', total: 0 }
-            ]
+            slots: categories.map(cat => ({ name: cat.name, total: 0 }))
         });
         setEditingEventId(null);
         setIsModalOpen(false);
@@ -118,6 +140,21 @@ const Events = () => {
 
     const handleEdit = (event) => {
         setEditingEventId(event._id || event.id);
+
+        // Merge existing event slots with current categories
+        const eventSlots = event.slots || [];
+        const mergedSlots = categories.map(cat => {
+            const existingSlot = eventSlots.find(s => s.name === cat.name);
+            return existingSlot ? { ...existingSlot } : { name: cat.name, total: 0 };
+        });
+
+        // Add any slots from the event that aren't in categories anymore (to preserve old data)
+        eventSlots.forEach(s => {
+            if (!mergedSlots.find(ms => ms.name === s.name)) {
+                mergedSlots.push({ ...s });
+            }
+        });
+
         setFormData({
             title: event.title || event.name || '',
             date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
@@ -126,11 +163,7 @@ const Events = () => {
             location: event.location || '',
             description: event.description || '',
             status: event.status || 'active',
-            slots: event.slots || [
-                { name: 'Boy A', total: 0 },
-                { name: 'Boy B', total: 0 },
-                { name: 'Boy C', total: 0 }
-            ]
+            slots: mergedSlots
         });
         setIsModalOpen(true);
     };
@@ -316,10 +349,10 @@ const Events = () => {
                             </div>
 
                             {/* Slots Snapshot */}
-                            <div className="grid grid-cols-3 gap-3 mb-6">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                                 {(event.slots || []).map((slot, index) => (
                                     <div key={index} className="bg-white dark:bg-slate-800/50 p-3 rounded-2xl border border-border flex flex-col items-center">
-                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-1">{slot.name}</p>
+                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-1 text-center">{slot.name}</p>
                                         <span className="text-lg font-black text-slate-900 dark:text-white leading-none">{slot.total || 0}</span>
                                     </div>
                                 ))}
@@ -422,10 +455,10 @@ const Events = () => {
 
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Slots Breakdown</h4>
-                                    <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                         {(viewingEvent.slots || []).map((slot, idx) => (
                                             <div key={idx} className="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-border flex flex-col items-center">
-                                                <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 mb-2">{slot.name}</span>
+                                                <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 mb-2 text-center">{slot.name}</span>
                                                 <span className="text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">{slot.total}</span>
                                             </div>
                                         ))}
@@ -546,10 +579,10 @@ const Events = () => {
 
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Staff Slots Distribution</label>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {(formData.slots || []).map((slot, index) => (
                                             <div key={index} className="space-y-1.5">
-                                                <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400 ml-1 text-center block">{slot.name}</label>
+                                                <label className="text-[9px] font-black uppercase tracking-tighter text-slate-400 ml-1 text-center block truncate" title={slot.name}>{slot.name}</label>
                                                 <input
                                                     type="number"
                                                     min="0"

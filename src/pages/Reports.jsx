@@ -4,44 +4,48 @@ import { BarChart3, PieChart, TrendingUp, Download, Calendar } from 'lucide-reac
 const Reports = () => {
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Analytics & Reports</h1>
-                    <p className="text-slate-500 mt-1">Deep dive into event performance and staff efficiency.</p>
+                    <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>Analytics & Reports</h1>
+                    <p className="text-sm font-medium mt-1" style={{ color: 'var(--text-muted)' }}>Deep dive into event performance and staff efficiency.</p>
                 </div>
-                <div className="flex gap-3">
-                    <button className="px-4 py-2 bg-slate-800 text-white rounded-xl border border-slate-700 font-medium">Monthly</button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold">Annual</button>
+                <div className="flex bg-main p-1 rounded-2xl border" style={{ background: 'var(--bg-main)', borderColor: 'var(--border-color)' }}>
+                    <button className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm bg-surface" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>Monthly</button>
+                    <button className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-surface/50" style={{ color: 'var(--text-muted)' }}>Annual</button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800 flex flex-col items-center justify-center min-h-[300px] text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4">
-                        <BarChart3 size={32} className="text-blue-500" />
+                <div className="card p-10 flex flex-col items-center justify-center min-h-[300px] text-center group cursor-pointer hover:border-primary transition-all">
+                    <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <BarChart3 size={36} style={{ color: 'var(--color-primary)' }} />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Performance Metrics</h3>
-                    <p className="text-slate-500 max-w-sm">Generating real-time statistics for all active staff and ongoing events.</p>
+                    <h3 className="text-xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Performance Metrics</h3>
+                    <p className="text-sm font-medium leading-relaxed max-w-xs" style={{ color: 'var(--text-muted)' }}>Generating real-time statistics for all active staff and ongoing events.</p>
                 </div>
-                <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-800 flex flex-col items-center justify-center min-h-[300px] text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
-                        <PieChart size={32} className="text-emerald-500" />
+                <div className="card p-10 flex flex-col items-center justify-center min-h-[300px] text-center group cursor-pointer transition-all border-emerald-500/0 hover:border-emerald-500">
+                    <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <PieChart size={36} color="#10b981" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Resource Allocation</h3>
-                    <p className="text-slate-500 max-w-sm">Track how staff categories are distributed across different locations.</p>
+                    <h3 className="text-xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Resource Allocation</h3>
+                    <p className="text-sm font-medium leading-relaxed max-w-xs" style={{ color: 'var(--text-muted)' }}>Track how staff categories are distributed across different locations.</p>
                 </div>
             </div>
 
-            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
-                <h3 className="font-bold text-white text-lg mb-6 uppercase tracking-tight">Available Reports</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {['Staff Attendance', 'Event Expenses', 'Category Wages', 'Booking Trends', 'Revenue Summary', 'Staff Ratings'].map((report) => (
-                        <button key={report} className="flex items-center justify-between p-4 bg-slate-950/50 rounded-xl border border-slate-800 hover:border-blue-500 transition-all text-left">
-                            <div>
-                                <p className="text-white font-bold">{report}</p>
-                                <p className="text-xs text-slate-500 mt-1">Last updated: 2 days ago</p>
+            <div className="card p-8">
+                <h3 className="font-bold text-lg mb-6" style={{ color: 'var(--text-primary)' }}>Available Reports</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {['Staff Attendance', 'Event Expenses', 'Category Wages', 'Booking Trends', 'Revenue Summary', 'Staff Ratings'].map((report, idx) => (
+                        <button key={report} className="flex items-center justify-between p-5 rounded-2xl border transition-all hover:translate-y-[-2px] group"
+                            style={{ background: 'var(--bg-main)', borderColor: 'var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                            <div className="text-left">
+                                <p className="font-bold text-sm mb-1 group-hover:text-primary transition-colors" style={{ color: 'var(--text-primary)' }}>{report}</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Last updated: 2 days ago</p>
                             </div>
-                            <Download size={18} className="text-slate-500" />
+                            <div className="p-2.5 rounded-xl bg-surface border transition-colors group-hover:border-primary group-hover:text-primary"
+                                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+                                <Download size={16} />
+                            </div>
                         </button>
                     ))}
                 </div>

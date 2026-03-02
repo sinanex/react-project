@@ -15,10 +15,11 @@ const Users = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    const [categories, setCategories] = useState([]);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     const [formData, setFormData] = useState({
-        name: '', email: '', phone: '', place: '', password: '', usertype: 'Boy A'
+        name: '', email: '', phone: '', place: '', password: '', role_type: ''
     });
 
     const API_URL = '/api/users';
@@ -52,7 +53,26 @@ const Users = () => {
         }
     };
 
-    useEffect(() => { fetchUsers(); }, [token]);
+    const fetchCategories = async () => {
+        const activeToken = token || localStorage.getItem('token');
+        if (!activeToken) return;
+        try {
+            const response = await fetch('/api/boy-categories', {
+                headers: { 'Authorization': `Bearer ${activeToken}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCategories(Array.isArray(data) ? data : []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch categories:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+        fetchCategories();
+    }, [token]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -60,7 +80,7 @@ const Users = () => {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', email: '', phone: '', place: '', password: '', usertype: 'Boy A' });
+        setFormData({ name: '', email: '', phone: '', place: '', password: '', role_type: '' });
         setEditingUser(null);
         setIsModalOpen(false);
     };
@@ -91,7 +111,7 @@ const Users = () => {
         setEditingUser(user);
         setFormData({
             name: user.name, email: user.email, phone: user.phone,
-            place: user.place, password: '', usertype: user.usertype || 'Boy A'
+            place: user.place, password: '', role_type: user.role_type || ''
         });
         setIsModalOpen(true);
     };
@@ -182,7 +202,7 @@ const Users = () => {
                                 <th className="px-6 py-5 text-xs font-bold uppercase tracking-widest text-right" style={{ color: 'var(--text-muted)' }}>Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y" style={{ borderColor: 'var(--divider-color)' }}>
+                        <tbody>
                             {isLoading ? (
                                 <tr>
                                     <td colSpan="5" className="px-6 py-20 text-center">
@@ -234,15 +254,11 @@ const Users = () => {
                                         </td>
                                         <td className="px-6 py-5">
                                             <span className={`inline-flex px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider
-                                                ${user.usertype === 'Admin'
+                                                ${user.role_type === 'Admin'
                                                     ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
-                                                    : user.usertype === 'Boy A'
-                                                        ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-                                                        : user.usertype === 'Boy B'
-                                                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                                            : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                                    : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                                                 }`}>
-                                                {user.usertype}
+                                                {user.role_type}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-right">
@@ -297,31 +313,32 @@ const Users = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Full Name</label>
-                                        <input required name="name" value={formData.name} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
+                                        <input required name="name" placeholder="e.g. John Doe" value={formData.name} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Email Address</label>
-                                        <input required type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
+                                        <input required type="email" name="email" placeholder="e.g. user@example.com" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Phone Number</label>
-                                        <input required name="phone" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
+                                        <input required name="phone" placeholder="e.g. +91 9876543210" value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Location</label>
-                                        <input required name="place" value={formData.place} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
+                                        <input required name="place" placeholder="e.g. Malappuram, KL" value={formData.place} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Password</label>
-                                        <input required={!editingUser} type="password" name="password" placeholder={editingUser ? "••••••••" : ""} value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
+                                        <input required={!editingUser} type="password" name="password" placeholder={editingUser ? "•••••••• (Leave blank to keep)" : "Enter a secure password"} value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Account Role</label>
-                                        <select name="usertype" value={formData.usertype} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none appearance-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }}>
-                                            <option value="Boy A">Boy A</option>
-                                            <option value="Boy B">Boy B</option>
-                                            <option value="Boy C">Boy C</option>
+                                        <select required name="role_type" value={formData.role_type} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none appearance-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }}>
+                                            <option value="" disabled>Select Role...</option>
                                             <option value="Admin">Admin</option>
+                                            {categories.map(cat => (
+                                                <option key={cat._id || cat.id} value={cat.name}>{cat.name}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
