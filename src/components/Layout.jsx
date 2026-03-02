@@ -3,146 +3,247 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../store/store';
 import {
-  LayoutDashboard,
-  Users,
-  Layers,
-  Calendar,
-  Wallet,
-  BarChart3,
-  Settings,
-  Bell,
-  Search,
-  Menu,
-  X,
-  LogOut,
-  Moon,
-  Sun
+  LayoutDashboard, Users, Layers, Calendar,
+  Wallet, BarChart3, Settings, Bell,
+  Search, Menu, X, LogOut, Moon, Sun
 } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+const menuItems = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: 'User Management', icon: Users, path: '/users' },
+  { name: 'Categories', icon: Layers, path: '/categories' },
+  { name: 'Events', icon: Calendar, path: '/events' },
+  { name: 'Payments', icon: Wallet, path: '/payments' },
+  { name: 'Reports', icon: BarChart3, path: '/reports' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
+];
 
+/* ─────────────────────────────────────────────── Sidebar ── */
 const Sidebar = ({ isOpen, toggle }) => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { name: 'User Management', icon: Users, path: '/users' },
-    { name: 'Categories', icon: Layers, path: '/categories' },
-    { name: 'Events', icon: Calendar, path: '/events' },
-    { name: 'Payments', icon: Wallet, path: '/payments' },
-    { name: 'Reports', icon: BarChart3, path: '/reports' },
-    { name: 'Settings', icon: Settings, path: '/settings' },
-  ];
-
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 z-40 h-screen w-64 transform transition-transform duration-300 ease-in-out bg-surface border-r border-border",
-      !isOpen && "-translate-x-full lg:translate-x-0"
-    )}>
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between h-20 px-6 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-white">C</span>
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 lg:hidden"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={toggle}
+        />
+      )}
+
+      <aside
+        className={`app-sidebar ${isOpen ? '' : 'closed'} lg:translate-x-0`}
+        style={{ transform: isOpen ? 'translateX(0)' : undefined }}
+      >
+        {/* Logo */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          height: 72, padding: '0 20px',
+          borderBottom: '1px solid var(--border-color)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36,
+              background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+              borderRadius: 10,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontWeight: 900, color: '#fff', fontSize: 16 }}>C</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">CaterPro</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                CaterPro
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                Admin Panel
+              </div>
+            </div>
           </div>
-          <button onClick={toggle} className="lg:hidden text-slate-400 hover:text-white">
-            <X size={24} />
+          <button onClick={toggle} className="lg:hidden" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}>
+            <X size={22} />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+        {/* Label */}
+        <div style={{ padding: '20px 20px 8px', fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Main Menu
+        </div>
+
+        {/* Nav */}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                  isActive
-                    ? "bg-blue-600/10 text-blue-500 shadow-sm"
-                    : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500"
-                )}
+                onClick={() => window.innerWidth < 1024 && toggle()}
+                className={`nav-item ${isActive ? 'active' : ''}`}
               >
-                <item.icon size={20} className={cn(
-                  "transition-colors",
-                  isActive ? "text-blue-500" : "group-hover:text-blue-500"
-                )} />
-                <span className="font-medium">{item.name}</span>
-                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />}
+                <item.icon size={19} className="nav-icon" />
+                <span>{item.name}</span>
+                {isActive && (
+                  <div style={{
+                    marginLeft: 'auto',
+                    width: 6, height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--color-primary)',
+                    boxShadow: '0 0 8px var(--color-primary)',
+                  }} />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        {/* Logout */}
+        <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
           <button
             onClick={() => {
               if (window.confirm('Do you want to logout?')) {
                 dispatch({ type: 'auth/logout' });
               }
             }}
-            className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:bg-red-500/10 hover:text-red-500 rounded-xl transition-colors"
+            className="nav-item"
+            style={{ width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
-            <LogOut size={20} />
-            <span className="font-medium">Logout</span>
+            <LogOut size={19} style={{ color: '#ef4444', opacity: 0.85, flexShrink: 0 }} />
+            <span style={{ color: '#ef4444', opacity: 0.85 }}>Logout</span>
           </button>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 
+/* ─────────────────────────────────────────────── Topbar ── */
 const Topbar = ({ toggleSidebar }) => {
   const dispatch = useDispatch();
   const theme = useSelector(state => state.app.ui.theme);
   const { user } = useSelector(state => state.auth);
+  const location = useLocation();
+
+  // Derive page title
+  const pageTitle = menuItems.find(m => location.pathname.startsWith(m.path))?.name || 'Dashboard';
 
   return (
-    <header className="h-20 bg-surface/50 backdrop-blur-xl border-b border-border sticky top-0 z-30 px-6 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <button onClick={toggleSidebar} className="lg:hidden p-2 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
-          <Menu size={24} />
+    <header className="app-topbar">
+      {/* Left */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden"
+          style={{
+            background: 'var(--bg-hover)', border: '1px solid var(--border-color)',
+            borderRadius: 10, padding: 8, color: 'var(--text-primary)', cursor: 'pointer',
+          }}
+        >
+          <Menu size={20} />
         </button>
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className="bg-background border border-border rounded-xl pl-10 pr-4 py-2 w-64 text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-          />
+
+        <div style={{ display: 'none' }} className="md:block">
+          <div style={{ position: 'relative' }}>
+            <Search
+              size={16}
+              style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
+            />
+            <input
+              type="text"
+              placeholder="Search anything…"
+              style={{
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 12,
+                padding: '9px 16px 9px 38px',
+                width: 260,
+                fontSize: '0.875rem',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={e => e.target.style.borderColor = 'var(--border-active)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+            />
+          </div>
         </div>
+
+        {/* Page title — visible on mobile */}
+        <span className="md:hidden" style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
+          {pageTitle}
+        </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Right */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Theme toggle */}
         <button
           onClick={() => dispatch(toggleTheme())}
-          className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+          title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+          style={{
+            background: 'var(--bg-hover)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 10, padding: 9,
+            color: 'var(--text-muted)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.18s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.borderColor = 'var(--border-active)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
         >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all relative">
-          <Bell size={20} />
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-surface rounded-full" />
+        {/* Notifications */}
+        <button
+          style={{
+            background: 'var(--bg-hover)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 10, padding: 9,
+            color: 'var(--text-muted)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', transition: 'all 0.18s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.borderColor = 'var(--border-active)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+        >
+          <Bell size={18} />
+          <span style={{
+            position: 'absolute', top: 7, right: 7,
+            width: 7, height: 7,
+            background: '#ef4444',
+            borderRadius: '50%',
+            border: '2px solid var(--bg-sidebar)',
+          }} />
         </button>
 
-        <div className="h-8 w-px bg-border mx-2" />
+        {/* Divider */}
+        <div style={{ width: 1, height: 32, background: 'var(--border-color)', margin: '0 4px' }} />
 
-        <div className="flex items-center gap-3 pl-2 cursor-pointer group">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold group-hover:text-blue-400 transition-colors capitalize">{user?.name || 'Admin User'}</p>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-tighter">{user?.usertype || 'Super Admin'}</p>
+        {/* User avatar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+          <div className="hidden sm:block" style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+              {user?.name || 'Admin User'}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {user?.usertype || 'Super Admin'}
+            </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20">
-            {user?.name?.charAt(0) || 'A'}
+          <div style={{
+            width: 38, height: 38,
+            borderRadius: 10,
+            background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 800, fontSize: '1rem',
+            boxShadow: '0 4px 12px rgba(99,102,241,0.35)',
+            flexShrink: 0,
+          }}>
+            {(user?.name?.charAt(0) || 'A').toUpperCase()}
           </div>
         </div>
       </div>
@@ -150,6 +251,7 @@ const Topbar = ({ toggleSidebar }) => {
   );
 };
 
+/* ─────────────────────────────────────────────── Layout ── */
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const theme = useSelector(state => state.app.ui.theme);
@@ -158,16 +260,20 @@ const Layout = () => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <Sidebar isOpen={isSidebarOpen} toggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+  // Close sidebar on large screens resize
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth >= 1024) setIsSidebarOpen(false); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
-      <div className={cn(
-        "transition-all duration-300",
-        "lg:ml-64"
-      )}>
-        <Topbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <main className="p-6 md:p-8">
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-primary)' }}>
+      <Sidebar isOpen={isSidebarOpen} toggle={() => setIsSidebarOpen(p => !p)} />
+
+      <div className="app-main">
+        <Topbar toggleSidebar={() => setIsSidebarOpen(p => !p)} />
+        <main style={{ padding: '2rem' }}>
           <Outlet />
         </main>
       </div>

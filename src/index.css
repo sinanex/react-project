@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════
    DESIGN TOKENS — Modern Dark Blue Theme
@@ -14,8 +14,39 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Dark Theme (default) ── */
+/* ── Light Theme (default) ── */
 :root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-main: #f0f4ff;
+  --bg-surface: #ffffff;
+  --bg-card: #f8faff;
+  --bg-sidebar: #ffffff;
+  --bg-hover: rgba(59, 130, 246, 0.06);
+  --bg-active: rgba(59, 130, 246, 0.12);
+  --bg-input: #ffffff;
+
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-active: rgba(59, 130, 246, 0.4);
+
+  --color-primary: #2563eb;
+  --color-primary-glow: rgba(37, 99, 235, 0.2);
+  --color-accent: #4f46e5;
+
+  --divider-color: #e2e8f0;
+
+  --sidebar-width: 260px;
+
+  --header-bg: rgba(240, 244, 255, 0.80);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Dark Theme ── */
 [data-theme='dark'] {
   color-scheme: dark;
 
@@ -42,33 +73,6 @@
 
   --header-bg: rgba(7, 13, 26, 0.75);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-}
-
-/* ── Light Theme ── */
-[data-theme='light'] {
-  color-scheme: light;
-
-  --bg-main: #f0f4ff;
-  --bg-surface: #ffffff;
-  --bg-card: #f8faff;
-  --bg-sidebar: #0d1629;
-  --bg-hover: rgba(59, 130, 246, 0.06);
-  --bg-active: rgba(59, 130, 246, 0.12);
-  --bg-input: #ffffff;
-
-  --text-primary: #0f172a;
-  --text-muted: #64748b;
-  --text-disabled: #94a3b8;
-
-  --border-color: rgba(15, 23, 42, 0.08);
-  --border-active: rgba(59, 130, 246, 0.4);
-
-  --color-primary: #2563eb;
-  --color-primary-glow: rgba(37, 99, 235, 0.2);
-  --color-accent: #4f46e5;
-
-  --header-bg: rgba(240, 244, 255, 0.80);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -115,18 +119,26 @@ body {
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  z-index: 40;
-  transition: transform 0.3s ease;
+  z-index: 50;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.app-sidebar.closed {
-  transform: translateX(-100%);
+@media (max-width: 1023px) {
+  .app-sidebar.closed {
+    transform: translateX(-100%);
+  }
 }
 
 .app-main {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
   background: var(--bg-main);
+}
+
+@media (max-width: 1023px) {
+  .app-main {
+    margin-left: 0;
+  }
 }
 
 .app-topbar {
@@ -149,7 +161,7 @@ body {
 ═══════════════════════════════════════════════════════════════════ */
 .nav-item {
   display: flex;
-  align-items: center;
+  items-center: center;
   gap: 12px;
   padding: 11px 16px;
   border-radius: 12px;
