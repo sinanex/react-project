@@ -19,7 +19,8 @@ const Users = () => {
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     const [formData, setFormData] = useState({
-        name: '', email: '', phone: '', place: '', password: '', role_type: ''
+        name: '', email: '', phone: '', place: '', password: '',
+        usertype: '', role_type: ''
     });
 
     const API_URL = '/api/users';
@@ -80,7 +81,10 @@ const Users = () => {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', email: '', phone: '', place: '', password: '', role_type: '' });
+        setFormData({
+            name: '', email: '', phone: '', place: '', password: '',
+            usertype: '', role_type: ''
+        });
         setEditingUser(null);
         setIsModalOpen(false);
     };
@@ -111,7 +115,9 @@ const Users = () => {
         setEditingUser(user);
         setFormData({
             name: user.name, email: user.email, phone: user.phone,
-            place: user.place, password: '', role_type: user.role_type || ''
+            place: user.place, password: '',
+            usertype: user.usertype || '',
+            role_type: user.role_type || user.usertype || ''
         });
         setIsModalOpen(true);
     };
@@ -254,11 +260,11 @@ const Users = () => {
                                         </td>
                                         <td className="px-6 py-5">
                                             <span className={`inline-flex px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider
-                                                ${user.role_type === 'Admin'
+                                                ${user.usertype === 'Admin'
                                                     ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                                                     : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                                                 }`}>
-                                                {user.role_type}
+                                                {user.role_type || user.usertype}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-right">
@@ -333,7 +339,21 @@ const Users = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Account Role</label>
-                                        <select required name="role_type" value={formData.role_type} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none appearance-none" style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }}>
+                                        <select
+                                            required
+                                            name="role_type"
+                                            value={formData.role_type || formData.usertype}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === 'Admin') {
+                                                    setFormData(prev => ({ ...prev, usertype: 'Admin', role_type: 'Admin' }));
+                                                } else {
+                                                    setFormData(prev => ({ ...prev, usertype: 'user', role_type: val }));
+                                                }
+                                            }}
+                                            className="w-full px-4 py-3 rounded-xl border border-border bg-main text-sm outline-none appearance-none"
+                                            style={{ background: 'var(--bg-main)', color: 'var(--text-primary)' }}
+                                        >
                                             <option value="" disabled>Select Role...</option>
                                             <option value="Admin">Admin</option>
                                             {categories.map(cat => (

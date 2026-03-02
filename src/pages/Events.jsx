@@ -32,6 +32,8 @@ const Events = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEventId, setEditingEventId] = useState(null);
     const [viewingEvent, setViewingEvent] = useState(null);
+    const [bookings, setBookings] = useState([]);
+    const [isLoadingBookings, setIsLoadingBookings] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [categories, setCategories] = useState([]);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -59,6 +61,35 @@ const Events = () => {
         fetchEvents();
         fetchCategories();
     }, [token]);
+
+    useEffect(() => {
+        if (viewingEvent) {
+            fetchBookings(viewingEvent._id || viewingEvent.id);
+        } else {
+            setBookings([]);
+        }
+    }, [viewingEvent]);
+
+    const fetchBookings = async (eventId) => {
+        if (!token || !eventId) return;
+        setIsLoadingBookings(true);
+        try {
+            const response = await fetch(`/api/events/${eventId}/bookings`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const result = await response.json();
+                setBookings(result.data || []);
+            } else {
+                setBookings([]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch bookings:', err);
+            setBookings([]);
+        } finally {
+            setIsLoadingBookings(false);
+        }
+    };
 
     const fetchCategories = async () => {
         const activeToken = token || localStorage.getItem('token');
@@ -444,12 +475,64 @@ const Events = () => {
                             <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto">
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Position</h4>
-                                    <div className="bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl border border-border space-y-2">
-                                        <div className="flex items-center gap-3 text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                    <div className="bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl border border-border space-y-2 text-slate-900 dark:text-white">
+                                        <div className="flex items-center gap-3 text-lg font-black uppercase tracking-tight">
                                             <MapPin size={20} className="text-rose-500 shrink-0" />
                                             {viewingEvent.place}
                                         </div>
                                         <p className="text-slate-500 text-sm font-medium ml-8">{viewingEvent.location}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Booked Staff List</h4>
+                                    <div className="bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-border overflow-hidden">
+                                        {isLoadingBookings ? (
+                                            <div className="p-8 flex items-center justify-center gap-3 text-slate-500 font-bold uppercase tracking-widest text-[10px]">
+                                                <Loader2 size={16} className="animate-spin text-blue-500" />
+                                                Retrieving booking data...
+                                            </div>
+                                        ) : bookings.length === 0 ? (
+                                            <div className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-[10px] italic">
+                                                No bookings recorded for this event yet
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left">
+                                                    <thead>
+                                                        <tr className="border-b border-border/50 text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-100/50 dark:bg-white/5">
+                                                            <th className="px-6 py-4">User</th>
+                                                            <th className="px-6 py-4">Place</th>
+                                                            <th className="px-6 py-4">Role Assigned</th>
+                                                            <th className="px-6 py-4">Booked Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-border/30">
+                                                        {bookings.map((booking, idx) => (
+                                                            <tr key={idx} className="hover:bg-blue-500/5 transition-colors text-slate-900 dark:text-white">
+                                                                <td className="px-6 py-4">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                                                                            {booking.username?.[0] || 'U'}
+                                                                        </div>
+                                                                        <span className="text-xs font-bold">{booking.username}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-4 text-xs font-medium text-slate-500">{booking.place || 'N/A'}</td>
+                                                                <td className="px-6 py-4">
+                                                                    <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-500 text-[9px] font-bold uppercase tracking-wide border border-blue-500/20">
+                                                                        {booking.slotName}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-6 py-4 text-[10px] font-medium text-slate-400">
+                                                                    {new Date(booking.bookedAt).toLocaleDateString()}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
